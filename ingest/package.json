@@ -1,0 +1,1 @@
+{"name":"amal-ingest","private":true,"dependencies":{"csv-parse":"^7","fast-xml-parser":"^5"}}
