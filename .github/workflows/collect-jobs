@@ -1,0 +1,33 @@
+name: Collect jobs
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["ingest/**", ".github/workflows/collect-jobs.yml"]
+permissions:
+  contents: write
+concurrency: collect-jobs
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm --prefix ingest install --no-audit --no-fund
+      - run: node ingest/run.js
+        env:
+          NODE_PATH: ingest/node_modules
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+      - name: Publish the feed
+        run: |
+          git config user.name "amal-connect-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/jobs.json
+          git diff --cached --quiet || git commit -m "Update job feed"
+          git push
